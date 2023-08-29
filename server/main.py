@@ -18,7 +18,7 @@ def playlist_recommendations(playlist_id):
     tracks_start = request.get_json().get('tracks_start')
     tracks_stop = request.get_json().get('tracks_stop')
 
-    if spotify_token == None:
+    if spotify_token is None:
         return {'success': False, 'error': 'No token provided'}, 400
 
     results = []
