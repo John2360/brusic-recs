@@ -51,6 +51,7 @@ export const handleCallback = () => {
 };
 
 export const isLoggedIn = () => {
+  console.log(token);
   return token && expiry && Date.now() < expiry;
 };
 

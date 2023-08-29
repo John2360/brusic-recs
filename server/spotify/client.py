@@ -32,7 +32,7 @@ class SpotifyClient(spotipy.Spotify):
     
     def artist(self, artist_id):
         if self._has_cache():
-            return self.cache.get_or_insert("artist", artist_id, lambda: super.artist(artist_id))
+            return self.cache.get_or_insert("artist", artist_id, lambda: super(SpotifyClient, self).artist(artist_id))
         return super().artist(artist_id)
 
     def _has_cache(self):

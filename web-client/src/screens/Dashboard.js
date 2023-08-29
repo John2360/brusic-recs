@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react'
 
 import { getPlaylistSelected, getPlaylistInfo, hasPlaylistSelected, getPlaylistRecommendations } from '../services/spotify';
-import { Box, Chip, Typography } from '@mui/material';
+import { Box, Chip, Skeleton } from '@mui/material';
 import SongTile from '../components/SongTile';
 import PlaylistsDialog from '../components/PlaylistsDialog';
 
@@ -24,6 +24,7 @@ function Dashboard() {
 
   useEffect(() => {
     if (selectedPlaylist) {
+      setRecommendationInfoList([]);
       setShowPlaylists(false);
 
       const fetch = async () => {
@@ -65,7 +66,20 @@ function Dashboard() {
         >
           <Chip label={playlistInfo?.name} variant="outlined" onClick={() => {setSelectedPlaylist(null); setShowPlaylists((val) => !val)}} />
         </Box>
-        {recommendationInfoList.length > 0 && <SongTile song={recommendationInfoList[0]} playlistId={selectedPlaylist} skipSong={skipSong} />}
+        {recommendationInfoList.length > 0 ? <SongTile song={recommendationInfoList[0]} playlistId={selectedPlaylist} skipSong={skipSong} /> : 
+        <>
+          <Skeleton variant="rectangular" sx={{m: 1}} width={600} height={300} />
+            <Box sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'right',
+              flexDirection: 'row',
+              width: 600,
+            }} >
+              <Skeleton variant="text" sx={{ fontSize: '1.5rem', width: 150 }}/>
+            </Box>
+          </>}
       </Box>
     </Box>
     </>
