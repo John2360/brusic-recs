@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
-import { addToSpotifyPlaylist, playSpotifyTrack } from '../services/spotify';
+import { addToSpotifyPlaylist, playSpotifyTrack, pauseSpotifyTrack } from '../services/spotify';
 import { Box, Paper, Chip, Typography, Button, Slider } from '@mui/material';
 import SpeedIcon from '@mui/icons-material/Speed';
+import PauseIcon from '@mui/icons-material/Pause';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 
 function SongTile(props) {
@@ -107,12 +108,25 @@ function SongTile(props) {
             </Box>
           </Box>
         </Box>
-        <Slider
-          size="small"
-          defaultValue={0}
-          value={msToPercent(counter)}
-          onChange={handleScrubber}
-        />
+        <Box
+          sx={{
+            display: 'flex',
+            width: '100%',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+          }}  
+        >
+          <PauseIcon sx={{width: '5%', "&:hover": {cursor: 'pointer'}}} onClick={pauseSpotifyTrack} />
+          <Slider
+            size="small"
+            defaultValue={0}
+            value={msToPercent(counter)}
+            onChange={handleScrubber}
+            sx={{width: '95%'}}
+          />
+        </Box>
       </Box>
     </Paper>
     <Box  sx={{
