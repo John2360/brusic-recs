@@ -25,13 +25,18 @@ def playlist_recommendations(playlist_id):
     spotify.set_auth(spotify_token)
 
     playlist_filter = PlaylistFilters()
-    if tracks_start != None and tracks_stop != None:
+    if tracks_start is not None and tracks_stop is not None:
         playlist_filter.tracks_start = tracks_start
         playlist_filter.tracks_stop = tracks_stop
 
     recommendations_filter = RecommendationsFilters()
-    playlist = spotify.playlist_tracks(playlist_id, track_anyalysis=True, playlist_filter=playlist_filter,
-                                       recommendations=True, recommendations_filter=recommendations_filter)
+    playlist = spotify.playlist_tracks(
+        playlist_id, 
+        track_anyalysis=True, 
+        playlist_filter=playlist_filter,
+        recommendations=True, 
+        recommendations_filter=recommendations_filter
+    )
 
     for track in playlist:
         results.extend(map(lambda x: {
