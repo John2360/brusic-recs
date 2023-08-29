@@ -4,15 +4,18 @@ from models.Artist import Artist
 from models.TrackAnalysis import TrackAnalysis
 from models.PlaylistFilters import PlaylistFilters
 
+from cache import Cache
+
 class SpotifyClient(spotipy.Spotify):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, cache: Cache = None, *args, **kwargs):
+        self.cache = cache
         super().__init__(*args, **kwargs)
 
     def get_track_audio_features(self, track_id):
         """Get audio features for a specific track."""
-        endpoint = f'audio-features/{track_id}'
-        response = self._get(endpoint)
-        return TrackAnalysis(tempo=response['tempo'], key=response['key'], danceability=response['danceability'], energy=response['energy'], loudness=response['loudness'], speechiness=response['speechiness'], acousticness=response['acousticness'], instrumentalness=response['instrumentalness'], liveness=response['liveness'])
+        if self._has_cache():
+            return self.cache.get_or_insert("analysis", track_id, lambda: self._get_audio_features(track_id))
+        return self._get_audio_features(track_id)
     
     def playlist_tracks(self, playlist_id, fields=None, market=None, playlist_filter=PlaylistFilters(), track_anyalysis=False, recommendations=False, recommendations_filter=None):
         tracks = super().playlist_tracks(playlist_id, fields, market)
@@ -27,12 +30,25 @@ class SpotifyClient(spotipy.Spotify):
 
         return results
     
+    def artist(self, artist_id):
+        if self._has_cache():
+            return self.cache.get_or_insert("artist", artist_id, lambda: super.artist(artist_id))
+        return super().artist(artist_id)
+
+    def _has_cache(self):
+        return self.cache is not None
+    
     def _get_artists(self, artist_ids):
         artists = []
         for artist_id in artist_ids:
             artist = self.artist(artist_id)
             artists.append(Artist(sid=artist_id, name=artist['name'], genres=artist['genres']))
         return artists
+
+    def _get_audio_features(self, track_id):
+        endpoint = f'audio-features/{track_id}'
+        response = self._get(endpoint)
+        return TrackAnalysis(tempo=response['tempo'], key=response['key'], danceability=response['danceability'], energy=response['energy'], loudness=response['loudness'], speechiness=response['speechiness'], acousticness=response['acousticness'], instrumentalness=response['instrumentalness'], liveness=response['liveness'])
     
     def _build_recommendation(self, recommendation):
         if recommendation['type'] != 'track':
@@ -45,9 +61,7 @@ class SpotifyClient(spotipy.Spotify):
         recommendation['track']['artists'] = recommendation['artists']
         recommendation['track']['duration_ms'] = recommendation['duration_ms']
 
-        
         return self._build_track(recommendation, track_anyalysis=True)
-
     
     def _build_track(self, track, track_anyalysis=False, recommendations=False, recommendations_filter=None):
         sid = track['track']['id']

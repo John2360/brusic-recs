@@ -1,14 +1,16 @@
 from flask import Flask, request
 from flask_cors import CORS, cross_origin
 from spotify.client import SpotifyClient
+from cache import CacheStore
 from models.RecommendationsFilters import RecommendationsFilters
 from models.PlaylistFilters import PlaylistFilters
 
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-spotify = SpotifyClient()
 
+cache = CacheStore()
+spotify = SpotifyClient(cache=cache)
 
 @app.route('/recommendations/<playlist_id>', methods=['POST'])
 @cross_origin()
@@ -45,7 +47,6 @@ def playlist_recommendations(playlist_id):
         }, track.recommendations))
 
     return {'success': True, 'recommendations': results}
-
 
 if __name__ == '__main__':
     app.run(debug=True)
