@@ -2,6 +2,7 @@ import spotipy
 from models.Track import Track
 from models.Artist import Artist
 from models.TrackAnalysis import TrackAnalysis
+from models.PlaylistFilters import PlaylistFilters
 
 class SpotifyClient(spotipy.Spotify):
     def __init__(self, *args, **kwargs):
@@ -13,13 +14,16 @@ class SpotifyClient(spotipy.Spotify):
         response = self._get(endpoint)
         return TrackAnalysis(tempo=response['tempo'], key=response['key'], danceability=response['danceability'], energy=response['energy'], loudness=response['loudness'], speechiness=response['speechiness'], acousticness=response['acousticness'], instrumentalness=response['instrumentalness'], liveness=response['liveness'])
     
-    def playlist_tracks(self, playlist_id, fields=None, market=None, track_anyalysis=False, recommendations=False):
+    def playlist_tracks(self, playlist_id, fields=None, market=None, playlist_filter=PlaylistFilters(), track_anyalysis=False, recommendations=False, recommendations_filter=None):
         tracks = super().playlist_tracks(playlist_id, fields, market)
         tracks = tracks['items']
         results = []
 
-        for track in tracks:
-            results.append(self._build_track(track, track_anyalysis=track_anyalysis, recommendations=recommendations))
+        if recommendations and recommendations_filter == None:
+            raise Exception('Recommendations filter is required when recommendations is True.')
+
+        for track in tracks[playlist_filter.tracks_start:playlist_filter.tracks_stop]:
+            results.append(self._build_track(track, track_anyalysis=track_anyalysis, recommendations=recommendations, recommendations_filter=recommendations_filter))
 
         return results
     
@@ -27,7 +31,7 @@ class SpotifyClient(spotipy.Spotify):
         artists = []
         for artist_id in artist_ids:
             artist = self.artist(artist_id)
-            artists.append(Artist.Artist(sid=artist_id, name=artist['name'], genres=artist['genres']))
+            artists.append(Artist(sid=artist_id, name=artist['name'], genres=artist['genres']))
         return artists
     
     def _build_recommendation(self, recommendation):
@@ -45,7 +49,7 @@ class SpotifyClient(spotipy.Spotify):
         return self._build_track(recommendation, track_anyalysis=True)
 
     
-    def _build_track(self, track, track_anyalysis=False, recommendations=False):
+    def _build_track(self, track, track_anyalysis=False, recommendations=False, recommendations_filter=None):
         sid = track['track']['id']
         name = track['track']['name']
         artist_ids = [artist['id'] for artist in track['track']['artists']]
@@ -68,6 +72,7 @@ class SpotifyClient(spotipy.Spotify):
         recommend = []
         if track_anyalysis and recommendations:
             # TODO: Add genres, BPM, and key filters to recommendations
-            recommend = [self._build_recommendation(track) for track in self.recommendations(seed_tracks=[track['track']['id']], limit=5)['tracks']]
+            limit = recommendations_filter.limit
+            recommend = [self._build_recommendation(track) for track in self.recommendations(seed_tracks=[track['track']['id']], limit=limit)['tracks']]
 
         return Track(sid=sid, name=name, artist=artists, genres=genres, cover_art=cover_art, duration=duration, track_analysis=anyalysis, recommendations=recommend)
