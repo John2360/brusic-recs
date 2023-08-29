@@ -34,10 +34,10 @@ def playlist_recommendations(playlist_id):
                                        recommendations=True, recommendations_filter=recommendations_filter)
 
     for track in playlist:
-        results.extend(list(map(lambda x: {
+        results.extend(map(lambda x: {
             'from': track.name,
             'recommendation': x.to_json()
-        }, track.recommendations)))
+        }, track.recommendations))
 
     return {'success': True, 'recommendations': results}
 
