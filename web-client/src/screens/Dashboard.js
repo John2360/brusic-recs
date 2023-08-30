@@ -23,8 +23,11 @@ function Dashboard() {
       const playlistInfo = await getPlaylistInfo(selectedPlaylist);
       setPlaylistInfo(playlistInfo);
       const recommendationInfo = await getPlaylistRecommendations(selectedPlaylist);
-      setRecommendationInfoList(recommendationInfo);
-      setListPos(0);
+      if (recommendationInfoList.length === 0) {
+        setRecommendationInfoList(recommendationInfo);
+      } else {
+        setRecommendationInfoList([...recommendationInfoList, ...recommendationInfo]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -33,7 +36,7 @@ function Dashboard() {
   // TODO: pre-fetch so data is ready immediately when user skips past the
   // end of the current list
   useEffect(() => {
-    if (listPos == recommendationInfoList.length) {
+    if (listPos == recommendationInfoList.length - 2) {
       fetch();
     }
   }, [listPos]);
