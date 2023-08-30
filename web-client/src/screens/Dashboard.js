@@ -26,7 +26,10 @@ function Dashboard() {
       if (recommendationInfoList.length === 0) {
         setRecommendationInfoList(recommendationInfo);
       } else {
-        setRecommendationInfoList([...recommendationInfoList, ...recommendationInfo]);
+        for (const rec of recommendationInfo.values()) {
+          recommendationInfoList.push(rec);
+        }
+        setRecommendationInfoList(recommendationInfoList)
       }
     } catch (error) {
       console.error('Error fetching data:', error);
