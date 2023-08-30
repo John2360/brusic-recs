@@ -51,7 +51,6 @@ export const handleCallback = () => {
 };
 
 export const isLoggedIn = () => {
-  console.log(token);
   return token && expiry && Date.now() < expiry;
 };
 
@@ -136,6 +135,23 @@ export const getPlaylistRecommendations = async (id) => {
     }
   }
 }
+
+export const getCurrentlyPlaying = async () => {
+  if (token) {
+    try {
+      const response = await axios.get(`https://api.spotify.com/v1/me/player/currently-playing`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching currently playing data:', error);
+    }
+  }
+}
+
 
 export const playSpotifyTrack = async (uri, position) => {
   if (token) {

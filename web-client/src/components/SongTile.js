@@ -1,13 +1,36 @@
 import React, { useEffect, useState } from 'react'
 
-import { addToSpotifyPlaylist, playSpotifyTrack, pauseSpotifyTrack } from '../services/spotify';
+import { addToSpotifyPlaylist, playSpotifyTrack, pauseSpotifyTrack, getCurrentlyPlaying } from '../services/spotify';
 import { Box, Paper, Chip, Typography, Button, Slider } from '@mui/material';
 import SpeedIcon from '@mui/icons-material/Speed';
 import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrow from '@mui/icons-material/PlayArrow';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 
 function SongTile(props) {
-  const [counter, setCounter] = useState(0);
+  const [clientState, setClientState] = useState({'isPlaying': false, 'counter': 0});
+  const [spotifyState, setSpotifyState] = useState({'isPlaying': false, 'counter': 0});
+
+  const resetStates = () => {
+    setClientState({'isPlaying': false, 'counter': 0});
+    setSpotifyState({'isPlaying': false, 'counter': 0});
+  }
+
+  const doSongPlay = () => {
+    setClientState({...clientState, 'isPlaying': true});
+    playSpotifyTrack(song.sid, 0);
+  }
+
+  const doSongResume = () => {
+    setClientState({...clientState, 'isPlaying': true});
+    playSpotifyTrack(song.sid, clientState.counter);
+  }
+
+  const doSongPause = () => {
+    setClientState({...clientState, 'isPlaying': false});
+    pauseSpotifyTrack();
+  }
+  
   const playlistId = props.playlistId;
   const from = props.song.from;
   const song = props.song.recommendation;
@@ -22,21 +45,52 @@ function SongTile(props) {
   }
 
   const handleScrubber = (event, value) => {
-    setCounter(percentToMs(value));
-    playSpotifyTrack(song.sid, counter);
+    setClientState({ ['isPlaying']: true, ['counter']: percentToMs(value) });
+    playSpotifyTrack(song.sid, percentToMs(value));
   }
 
   useEffect(() => {
-    playSpotifyTrack(song.sid, 0);
+    resetStates();
+    doSongPlay();
+  }, [song]);
 
+  useEffect(() => {
+    let intervalId;
+
+    if (clientState.isPlaying) {
+      intervalId = setInterval(() => {
+        setClientState(prevState => ({ ...prevState, ['counter']: prevState.counter + 100 }));
+      }, 100);
+    } else {
+      clearInterval(intervalId);
+    }
+
+    return () => clearInterval(intervalId);
+  }, [clientState.isPlaying]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
-      setCounter(prevCounter => prevCounter + 250);
-    }, 250);
+      const fetch = async () => {
+        try {
+          const currentlyPlaying = await getCurrentlyPlaying();
+          setSpotifyState({'isPlaying': currentlyPlaying.is_playing, 'counter': currentlyPlaying.progress_ms});
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+      fetch();
+    }, 500);
 
     return () => {
       clearInterval(interval);
     };
-  }, [song]);
+  }, []);
+
+  useEffect(() => {
+    if (Math.abs(clientState.counter - spotifyState.counter) > 500) {
+      setClientState({...clientState, 'counter': spotifyState.counter});
+    }
+  }, [clientState, spotifyState]);
 
   return (
     <>
@@ -118,11 +172,14 @@ function SongTile(props) {
             flexDirection: 'row',
           }}  
         >
-          <PauseIcon sx={{width: '5%', "&:hover": {cursor: 'pointer'}}} onClick={pauseSpotifyTrack} />
+          <Box  sx={{width: '5%', "&:hover": {cursor: 'pointer'}}}>
+            {clientState.isPlaying ? <PauseIcon onClick={doSongPause} />
+            : <PlayArrow onClick={doSongResume}  />}
+          </Box>
           <Slider
             size="small"
             defaultValue={0}
-            value={msToPercent(counter)}
+            value={msToPercent(clientState.counter)}
             onChange={handleScrubber}
             sx={{width: '95%'}}
           />
